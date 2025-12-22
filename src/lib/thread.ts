@@ -41,6 +41,7 @@ export interface ThreadState {
   suspects: string[];
   last_message_from?: string;
   last_message_to?: string;
+  resolution_summary?: string;
 }
 
 // Create initial thread state
