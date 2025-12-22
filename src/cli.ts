@@ -70,6 +70,8 @@ program
   .command("prompts")
   .description("Generate and display prompts for each repo")
   .requiredOption("--thread <id>", "Thread ID")
+  .option("--repo <repo>", "Generate prompt for specific repo only")
+  .option("--output <format>", "Output format: full or summary", "full")
   .action(async (options) => {
     const { promptsCommand } = await import("./commands/prompts.js");
     await promptsCommand(options);
