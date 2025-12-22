@@ -5,14 +5,14 @@ This roadmap converts `master_plan_final.md` into actionable issues grouped by p
 Each issue has a stable ID for tracking and can be copied into a ticket system.
 
 ## Operating Rules
-- Phase order is strict: M1 -> M2 -> M3 -> M4 -> M5.
+- Phase order is strict: M1 -> M2 -> M2.5 -> M3 -> M4 -> M5.
 - Each issue must produce a visible, testable artifact.
 - Do not expand scope inside a phase; defer to next phase.
 - Acceptance criteria must be verifiable from the workspace.
 
 ---
 
-## Phase 1: Core MVP (M1)
+## Phase 1: Core MVP (M1) ✓ COMPLETE
 
 Milestone goals:
 - File-based workflow works end-to-end for 2 repos.
@@ -37,7 +37,7 @@ Milestone goals:
 
 ---
 
-## Phase 2: Live View + Interrupt (M2)
+## Phase 2: Live View + Interrupt (M2) ✓ COMPLETE
 
 Milestone goals:
 - Live view streams conversation updates.
@@ -50,6 +50,24 @@ Milestone goals:
 | M2-02 | Interrupt | Implement `council interrupt` to write HUMAN message to inbox. | Next tick includes human notes in prompts. | M1-06 |
 | M2-03 | Prompt injection | Ensure human notes are visible in prompts and transcript. | Prompt contains a human notes block and transcript shows injection. | M2-02 |
 | M2-04 | Pause/resume | Optional: pause loop and resume without losing state. | Paused threads do not generate prompts until resumed. | M1-08 |
+
+---
+
+## Phase 2.5: Claude Integration (M2.5) ← CURRENT
+
+Milestone goals:
+- Claude Code sessions can be spawned as subprocesses.
+- Outbox files are detected automatically via file watching.
+- Multiple sessions run in parallel with orchestration.
+- Auto-tick mode advances turns without manual intervention.
+
+| ID | Title | Description | Acceptance Criteria | Dependencies |
+| --- | --- | --- | --- | --- |
+| M2.5-00 | Claude spawner | Spawn Claude Code CLI as subprocess with working directory and prompt piping. | `council spawn --thread <id>` opens Claude Code sessions for pending repos. | M2-01 |
+| M2.5-01 | Outbox watcher | Use chokidar to watch outbox/ for new JSON files. | Watcher detects new outbox files within 500ms and emits events. | M1-08 |
+| M2.5-02 | Session orchestrator | Manage multiple Claude Code sessions with health checks and cleanup. | Sessions can be started, monitored, and terminated cleanly. | M2.5-00 |
+| M2.5-03 | Auto-tick mode | Automatically run tick when outbox files appear. | `council run --thread <id>` enters auto-tick loop until resolution. | M2.5-01 |
+| M2.5-04 | Session state | Track session PIDs and status in state.json. | State reflects running sessions and their health. | M2.5-02 |
 
 ---
 

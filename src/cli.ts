@@ -131,4 +131,29 @@ program
     await scanCommand(options);
   });
 
+// spawn command
+program
+  .command("spawn")
+  .description("Spawn Claude Code sessions for pending repos")
+  .requiredOption("--thread <id>", "Thread ID")
+  .option("--repo <repo>", "Spawn for specific repo only")
+  .option("--print", "Run in print mode (non-interactive)")
+  .option("--all", "Spawn for all pending repos")
+  .action(async (options) => {
+    const { spawnCommand } = await import("./commands/spawn.js");
+    await spawnCommand(options);
+  });
+
+// run command (auto-tick loop)
+program
+  .command("run")
+  .description("Run auto-tick loop until thread resolves")
+  .requiredOption("--thread <id>", "Thread ID")
+  .option("--spawn", "Also spawn Claude Code sessions")
+  .option("--timeout <ms>", "Max runtime in milliseconds")
+  .action(async (options) => {
+    const { runCommand } = await import("./commands/run.js");
+    await runCommand(options);
+  });
+
 program.parse();
