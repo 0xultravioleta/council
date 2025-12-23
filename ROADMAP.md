@@ -71,7 +71,7 @@ Milestone goals:
 
 ---
 
-## Phase 3: Acontext Memory (M3)
+## Phase 3: Acontext Memory (M3) ✓ COMPLETE
 
 Milestone goals:
 - Sessions and artifacts are written to Acontext.

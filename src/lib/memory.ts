@@ -15,6 +15,14 @@ import {
   type ExperienceSearchResult,
   AcontextError,
 } from "./acontext.js";
+import {
+  CogneeClient,
+  getCogneeClient,
+  distillFromResolution,
+  formatFactsForPrompt,
+  type Fact,
+  type CogneeConfig,
+} from "./cognee.js";
 import type { ThreadState } from "./thread.js";
 import type { Message } from "./message.js";
 import type { NormalizedRegistry } from "./registry.js";
@@ -30,7 +38,7 @@ export interface MemoryConfig {
 
 export interface MemoryContext {
   sops: SOP[];
-  facts: string[];
+  facts: Fact[];
   sopPrompt: string;
   factPrompt: string;
 }
@@ -49,6 +57,7 @@ export interface MemoryStatus {
 
 export class MemoryManager {
   private acontext: AcontextClient | null = null;
+  private cognee: CogneeClient | null = null;
   private config: MemoryConfig;
   private status: MemoryStatus;
 
@@ -62,6 +71,10 @@ export class MemoryManager {
 
     if (config.enabled && config.acontext) {
       this.acontext = createAcontextClient(config.acontext);
+    }
+
+    if (config.enabled && config.cognee?.enabled) {
+      this.cognee = getCogneeClient({ enabled: true, local: config.cognee.local });
     }
   }
 
@@ -87,9 +100,19 @@ export class MemoryManager {
       }
     }
 
-    // Cognee check would go here (M4)
-    // For now, mark as unavailable
-    this.status.cognee.available = false;
+    // Check Cognee
+    if (this.cognee) {
+      try {
+        const healthy = await this.cognee.healthCheck();
+        this.status.cognee.available = healthy;
+        if (!healthy) {
+          this.status.cognee.lastError = "Cognee not enabled";
+        }
+      } catch (error) {
+        this.status.cognee.available = false;
+        this.status.cognee.lastError = (error as Error).message;
+      }
+    }
 
     return this.status;
   }
@@ -128,7 +151,22 @@ export class MemoryManager {
       }
     }
 
-    // Fetch facts from Cognee would go here (M4)
+    // Fetch facts from Cognee
+    if (this.cognee && this.status.cognee.available) {
+      try {
+        const query = `${threadTitle} ${repos.join(" ")}`;
+        const facts = await this.cognee.search(query, {
+          repos,
+          limit: 10,
+          min_confidence: 0.5,
+        });
+        context.facts = facts;
+        context.factPrompt = formatFactsForPrompt(facts);
+      } catch (error) {
+        this.logWarning("Cognee search failed", error);
+        this.status.cognee.lastError = (error as Error).message;
+      }
+    }
 
     return context;
   }
@@ -139,8 +177,8 @@ export class MemoryManager {
   async saveThread(
     thread: ThreadState,
     messages: Message[]
-  ): Promise<{ session?: AcontextSession; learned?: number }> {
-    const result: { session?: AcontextSession; learned?: number } = {};
+  ): Promise<{ session?: AcontextSession; learned?: number; facts?: number }> {
+    const result: { session?: AcontextSession; learned?: number; facts?: number } = {};
 
     if (!this.config.enabled) {
       return result;
@@ -181,6 +219,32 @@ export class MemoryManager {
       } catch (error) {
         this.logWarning("Acontext save failed", error);
         this.status.acontext.lastError = (error as Error).message;
+      }
+    }
+
+    // Save facts to Cognee at checkpoints (resolution)
+    if (this.cognee && this.status.cognee.available && thread.status === "resolved") {
+      try {
+        // Find resolution message
+        const resolutionMsg = messages.find((m) => m.type === "resolution");
+        if (resolutionMsg) {
+          const distilled = distillFromResolution(thread, resolutionMsg);
+
+          // Add facts
+          for (const fact of distilled.facts) {
+            await this.cognee.addFact(fact);
+          }
+
+          // Add edges
+          for (const edge of distilled.edges) {
+            await this.cognee.addEdge(edge);
+          }
+
+          result.facts = distilled.facts.length;
+        }
+      } catch (error) {
+        this.logWarning("Cognee save failed", error);
+        this.status.cognee.lastError = (error as Error).message;
       }
     }
 

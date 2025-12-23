@@ -124,6 +124,9 @@ export async function closeCommand(options: CloseOptions): Promise<void> {
           if (result.learned && result.learned > 0) {
             console.log(chalk.green(`  ✓ Learned ${result.learned} SOP(s)`));
           }
+          if (result.facts && result.facts > 0) {
+            console.log(chalk.green(`  ✓ Distilled ${result.facts} fact(s) to Cognee`));
+          }
         } else {
           console.log(chalk.yellow("  ⚠ Memory systems unavailable"));
         }
