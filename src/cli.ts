@@ -140,9 +140,43 @@ program
   .option("--repo <repo>", "Spawn for specific repo only")
   .option("--print", "Run in print mode (non-interactive)")
   .option("--all", "Spawn for all pending repos")
+  .option("--tmux", "Use tmux multi-pane layout")
+  .option("--layout <type>", "Tmux layout: horizontal, vertical, tiled", "tiled")
+  .option("--attach", "Attach to tmux session after creation")
   .action(async (options) => {
     const { spawnCommand } = await import("./commands/spawn.js");
     await spawnCommand(options);
+  });
+
+// sessions command
+const sessions = program
+  .command("sessions")
+  .description("Manage Claude Code and tmux sessions");
+
+sessions
+  .command("list")
+  .description("List active sessions")
+  .action(async () => {
+    const { listSessions } = await import("./commands/spawn.js");
+    listSessions();
+  });
+
+sessions
+  .command("kill")
+  .description("Kill a tmux session")
+  .requiredOption("--name <name>", "Session name (e.g., council-th_xxx)")
+  .action(async (options) => {
+    const { killTmuxSession } = await import("./commands/spawn.js");
+    killTmuxSession(options.name);
+  });
+
+sessions
+  .command("attach")
+  .description("Attach to a tmux session")
+  .requiredOption("--name <name>", "Session name")
+  .action(async (options) => {
+    const { attachToSession } = await import("./commands/spawn.js");
+    attachToSession(options.name);
   });
 
 // run command (auto-tick loop)

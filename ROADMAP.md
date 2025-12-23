@@ -53,7 +53,7 @@ Milestone goals:
 
 ---
 
-## Phase 2.5: Claude Integration (M2.5) ← CURRENT
+## Phase 2.5: Claude Integration (M2.5) ✓ COMPLETE
 
 Milestone goals:
 - Claude Code sessions can be spawned as subprocesses.
@@ -88,7 +88,7 @@ Milestone goals:
 
 ---
 
-## Phase 4: Cognee Memory (M4)
+## Phase 4: Cognee Memory (M4) ✓ COMPLETE
 
 Milestone goals:
 - Facts and edges are stored only at checkpoints.
@@ -105,7 +105,7 @@ Milestone goals:
 
 ---
 
-## Phase 5: Automation + UX (M5)
+## Phase 5: Automation + UX (M5) ← CURRENT
 
 Milestone goals:
 - Optional automation does not change the file protocol.

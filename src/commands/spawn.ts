@@ -2,12 +2,23 @@ import { resolve } from "node:path";
 import { loadThreadState } from "../lib/thread.js";
 import { loadRegistry } from "../lib/registry.js";
 import { spawner, spawnAllPending, type SpawnedSession } from "../lib/spawner.js";
+import {
+  createTmuxSession,
+  isTmuxAvailable,
+  listCouncilSessions,
+  killSession,
+  attachSession,
+  type TmuxOptions,
+} from "../lib/tmux.js";
 
 export interface SpawnCommandOptions {
   thread: string;
   repo?: string;
   print?: boolean;
   all?: boolean;
+  tmux?: boolean;
+  layout?: "horizontal" | "vertical" | "tiled";
+  attach?: boolean;
 }
 
 export async function spawnCommand(options: SpawnCommandOptions): Promise<void> {
@@ -31,6 +42,44 @@ export async function spawnCommand(options: SpawnCommandOptions): Promise<void> 
     }
 
     console.log(`   Pending: ${state.pending_for.join(", ")}`);
+
+    // Tmux mode
+    if (options.tmux) {
+      if (!isTmuxAvailable()) {
+        console.error("\n❌ tmux is not installed or not in PATH");
+        process.exit(1);
+      }
+
+      console.log(`\n🖥️  Creating tmux session...`);
+      console.log(`   Layout: ${options.layout ?? "tiled"}`);
+
+      try {
+        const session = await createTmuxSession({
+          threadId: options.thread,
+          basePath,
+          layout: options.layout,
+          startClaude: true,
+          claudePrintMode: options.print,
+          attach: options.attach,
+        });
+
+        console.log(`\n✅ Tmux session created: ${session.sessionName}`);
+        console.log(`   Panes: ${session.panes.length}`);
+        for (const pane of session.panes) {
+          console.log(`     ${pane.index}: ${pane.repo} → ${pane.cwd}`);
+        }
+
+        if (!options.attach) {
+          console.log(`\n💡 To attach: tmux attach -t ${session.sessionName}`);
+          console.log(`   To kill:   tmux kill-session -t ${session.sessionName}`);
+        }
+
+        return;
+      } catch (error) {
+        console.error(`\n❌ Failed to create tmux session: ${(error as Error).message}`);
+        process.exit(1);
+      }
+    }
 
     // Determine which repos to spawn
     const reposToSpawn = options.repo
@@ -146,17 +195,49 @@ export function listSessions(): void {
 
   if (sessions.length === 0) {
     console.log("\nNo active Claude Code sessions");
-    return;
+  } else {
+    console.log(`\n📊 Active sessions (${sessions.length}):\n`);
+
+    for (const session of sessions) {
+      console.log(`   ${session.repo}`);
+      console.log(`     Thread: ${session.threadId}`);
+      console.log(`     PID: ${session.pid}`);
+      console.log(`     CWD: ${session.cwd}`);
+      console.log(`     Started: ${session.startedAt}`);
+      console.log("");
+    }
   }
 
-  console.log(`\n📊 Active sessions (${sessions.length}):\n`);
-
-  for (const session of sessions) {
-    console.log(`   ${session.repo}`);
-    console.log(`     Thread: ${session.threadId}`);
-    console.log(`     PID: ${session.pid}`);
-    console.log(`     CWD: ${session.cwd}`);
-    console.log(`     Started: ${session.startedAt}`);
+  // Also list tmux sessions
+  const tmuxSessions = listCouncilSessions();
+  if (tmuxSessions.length > 0) {
+    console.log(`\n🖥️  Tmux sessions (${tmuxSessions.length}):\n`);
+    for (const name of tmuxSessions) {
+      console.log(`   ${name}`);
+    }
     console.log("");
+  }
+}
+
+/**
+ * Kill a tmux session
+ */
+export function killTmuxSession(sessionName: string): void {
+  if (killSession(sessionName)) {
+    console.log(`✅ Killed tmux session: ${sessionName}`);
+  } else {
+    console.error(`❌ Session "${sessionName}" not found`);
+  }
+}
+
+/**
+ * Attach to a tmux session
+ */
+export function attachToSession(sessionName: string): void {
+  try {
+    attachSession(sessionName);
+  } catch (error) {
+    console.error(`❌ ${(error as Error).message}`);
+    process.exit(1);
   }
 }
