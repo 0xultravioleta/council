@@ -119,6 +119,8 @@ program
   .description("Add evidence file to thread")
   .requiredOption("--thread <id>", "Thread ID")
   .requiredOption("--file <path>", "Path to evidence file")
+  .option("--redact", "Automatically redact detected secrets")
+  .option("--force", "Add file even if secrets are detected (use with caution)")
   .action(async (options) => {
     const { addEvidenceCommand } = await import("./commands/evidence.js");
     await addEvidenceCommand(options);
