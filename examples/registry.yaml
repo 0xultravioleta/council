@@ -1,0 +1,57 @@
+# Example Council Registry
+# Copy this to .council/registry.yaml and adjust paths
+
+repos:
+  # Frontend application
+  frontend:
+    path: ../frontend
+    description: React frontend with TypeScript
+    # Optional: specify which files to include in prompts
+    include_patterns:
+      - "src/**/*.tsx"
+      - "src/**/*.ts"
+    exclude_patterns:
+      - "**/*.test.ts"
+      - "node_modules/**"
+
+  # Backend API server
+  backend:
+    path: ../backend
+    description: Node.js Express API server
+    include_patterns:
+      - "src/**/*.ts"
+      - "prisma/schema.prisma"
+    exclude_patterns:
+      - "**/*.test.ts"
+
+  # Shared utilities library
+  shared:
+    path: ../shared
+    description: Shared types and utilities
+    include_patterns:
+      - "src/**/*.ts"
+
+# Memory configuration (optional)
+memory:
+  # Acontext for SOPs and session history
+  acontext:
+    enabled: false  # Set to true when Acontext is available
+    url: http://localhost:8080
+    api_key: ${ACONTEXT_API_KEY}  # Use environment variable
+
+  # Cognee for semantic facts
+  cognee:
+    enabled: false  # Set to true when Cognee is available
+    dataset: council-facts
+    ttl_days: 90  # Fact expiration
+
+# Default settings
+defaults:
+  # Maximum turns before requiring human intervention
+  max_turns: 20
+
+  # Prompt generation options
+  prompts:
+    include_transcript: true
+    include_evidence: true
+    max_context_lines: 500
