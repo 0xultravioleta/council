@@ -129,6 +129,8 @@ program
   .command("scan")
   .description("Scan repos for synergy and integration opportunities")
   .requiredOption("--repos <repos>", "Comma-separated list of repos to scan")
+  .option("--output <format>", "Output format: summary, full, or json", "full")
+  .option("--save", "Save results to .council/scans/")
   .action(async (options) => {
     const { scanCommand } = await import("./commands/scan.js");
     await scanCommand(options);
