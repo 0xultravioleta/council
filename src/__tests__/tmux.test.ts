@@ -115,9 +115,12 @@ describe("tmux utilities", () => {
   describe("listCouncilSessions", () => {
     it("should return list of council sessions", async () => {
       // Need to return a string because encoding: 'utf-8' is passed
-      vi.mocked(childProcess.execSync).mockReturnValue(
-        "council-th_001\ncouncil-th_002\nother-session" as unknown as Buffer
-      );
+      (vi.mocked(childProcess.execSync) as any).mockImplementation((cmd: string) => {
+        if (cmd.includes("list-sessions")) {
+          return "council-th_001\ncouncil-th_002\nother-session";
+        }
+        return Buffer.from("");
+      });
 
       vi.resetModules();
       const { listCouncilSessions } = await import("../lib/tmux.js");

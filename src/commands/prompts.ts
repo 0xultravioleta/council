@@ -2,12 +2,20 @@ import chalk from "chalk";
 import { workspaceExists } from "../lib/workspace.js";
 import { loadThreadState } from "../lib/thread.js";
 import { generatePrompts, generatePromptForRepo } from "../lib/prompts.js";
+import {
+  isClipboardAvailable,
+  copyToClipboard,
+  copyPromptWithConfirmation,
+  interactivePromptSelector,
+} from "../lib/clipboard.js";
 
 export interface PromptsOptions {
   thread: string;
   repo?: string;
   output?: "full" | "summary";
   memory?: boolean;
+  copy?: boolean;
+  interactive?: boolean;
 }
 
 export async function promptsCommand(options: PromptsOptions): Promise<void> {
@@ -47,6 +55,12 @@ export async function promptsCommand(options: PromptsOptions): Promise<void> {
         process.exit(1);
       }
 
+      // Handle copy option
+      if (options.copy) {
+        await copyPromptWithConfirmation(prompt.prompt, options.repo);
+        return;
+      }
+
       if (options.output === "summary") {
         printSummary([prompt]);
       } else {
@@ -58,6 +72,21 @@ export async function promptsCommand(options: PromptsOptions): Promise<void> {
     } else {
       // Generate prompts for all pending repos
       const prompts = await generatePrompts(cwd, options.thread, promptOptions);
+
+      // Handle interactive copy mode
+      if (options.interactive) {
+        await interactivePromptSelector(
+          prompts.map((p) => ({ repo: p.repo, prompt: p.prompt }))
+        );
+        return;
+      }
+
+      // Handle copy (first prompt only, with confirmation)
+      if (options.copy && prompts.length > 0) {
+        console.log(chalk.yellow(`Multiple prompts available. Use --interactive for selection.`));
+        await copyPromptWithConfirmation(prompts[0].prompt, prompts[0].repo);
+        return;
+      }
 
       if (options.output === "summary") {
         printSummary(prompts);

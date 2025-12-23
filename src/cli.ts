@@ -73,6 +73,8 @@ program
   .option("--repo <repo>", "Generate prompt for specific repo only")
   .option("--output <format>", "Output format: full or summary", "full")
   .option("--memory", "Include SOPs and facts from memory")
+  .option("--copy", "Copy prompt to clipboard (with confirmation)")
+  .option("--interactive", "Interactive mode to select and copy prompts")
   .action(async (options) => {
     const { promptsCommand } = await import("./commands/prompts.js");
     await promptsCommand(options);
