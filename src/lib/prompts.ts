@@ -2,6 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { getThreadPaths, loadThreadState } from "./thread.js";
 import { loadRegistry, type NormalizedRegistry, type RepoConfig } from "./registry.js";
+import { createMemoryManager, type MemoryContext } from "./memory.js";
 import type { Message } from "./message.js";
 
 export interface GeneratedPrompt {
@@ -9,6 +10,7 @@ export interface GeneratedPrompt {
   repoConfig: RepoConfig;
   prompt: string;
   inboxMessages: Message[];
+  memoryContext?: MemoryContext;
 }
 
 // Read all messages from a repo's inbox
@@ -162,16 +164,40 @@ function formatInboxMessages(messages: Message[]): string {
   return formatted;
 }
 
+export interface GeneratePromptsOptions {
+  /** Include memory context (SOPs, facts) */
+  includeMemory?: boolean;
+}
+
 // Generate prompts for all pending repos
 export async function generatePrompts(
   basePath: string,
-  threadId: string
+  threadId: string,
+  options?: GeneratePromptsOptions
 ): Promise<GeneratedPrompt[]> {
   const registry = await loadRegistry(basePath);
   const state = await loadThreadState(basePath, threadId);
   const paths = getThreadPaths(basePath, threadId);
 
   const prompts: GeneratedPrompt[] = [];
+
+  // Fetch memory context if enabled
+  let memoryContext: MemoryContext | undefined;
+  if (options?.includeMemory && registry.memory.enabled) {
+    try {
+      const memoryManager = createMemoryManager(registry);
+      await memoryManager.initialize();
+      if (memoryManager.isAvailable()) {
+        memoryContext = await memoryManager.getContextForThread(
+          state.title,
+          state.repos
+        );
+      }
+    } catch (error) {
+      // Graceful degradation - continue without memory
+      console.warn(`[Memory] Failed to fetch context: ${(error as Error).message}`);
+    }
+  }
 
   for (const repo of state.pending_for) {
     const repoConfig = registry.repos[repo];
@@ -196,8 +222,21 @@ export async function generatePrompts(
       registry
     );
 
+    // Build memory section if available
+    let memorySection = "";
+    if (memoryContext && (memoryContext.sopPrompt || memoryContext.factPrompt)) {
+      memorySection = "\n## Memory Context\n\n";
+      if (memoryContext.sopPrompt) {
+        memorySection += memoryContext.sopPrompt + "\n";
+      }
+      if (memoryContext.factPrompt) {
+        memorySection += memoryContext.factPrompt + "\n";
+      }
+    }
+
     const fullPrompt =
       systemPrompt +
+      memorySection +
       "\n## Inbox Messages\n\n" +
       formatInboxMessages(repoMessages) +
       "\n## Your Task\n\nReview the messages above and investigate in your codebase. When ready, respond with a message to the appropriate repo.\n";
@@ -207,6 +246,7 @@ export async function generatePrompts(
       repoConfig,
       prompt: fullPrompt,
       inboxMessages: repoMessages,
+      memoryContext,
     });
   }
 
@@ -217,8 +257,9 @@ export async function generatePrompts(
 export async function generatePromptForRepo(
   basePath: string,
   threadId: string,
-  repo: string
+  repo: string,
+  options?: GeneratePromptsOptions
 ): Promise<GeneratedPrompt | null> {
-  const prompts = await generatePrompts(basePath, threadId);
+  const prompts = await generatePrompts(basePath, threadId, options);
   return prompts.find((p) => p.repo === repo) || null;
 }

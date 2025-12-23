@@ -52,11 +52,9 @@ vi.mock("node:fs/promises", () => ({
 
 // Mock child_process.spawn
 const mockChildProcess = () => {
-  const emitter = new EventEmitter() as EventEmitter & Partial<ChildProcess>;
-  emitter.pid = 12345;
-  emitter.stdin = new EventEmitter() as any;
-  emitter.stdin.write = vi.fn();
-  emitter.stdin.end = vi.fn();
+  const emitter = new EventEmitter() as any;
+  Object.defineProperty(emitter, "pid", { value: 12345, writable: false });
+  emitter.stdin = { write: vi.fn(), end: vi.fn() };
   emitter.stdout = new EventEmitter();
   emitter.stderr = new EventEmitter();
   emitter.kill = vi.fn().mockReturnValue(true);

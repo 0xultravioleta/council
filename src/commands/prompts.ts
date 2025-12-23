@@ -7,6 +7,7 @@ export interface PromptsOptions {
   thread: string;
   repo?: string;
   output?: "full" | "summary";
+  memory?: boolean;
 }
 
 export async function promptsCommand(options: PromptsOptions): Promise<void> {
@@ -33,10 +34,12 @@ export async function promptsCommand(options: PromptsOptions): Promise<void> {
     return;
   }
 
+  const promptOptions = { includeMemory: options.memory };
+
   try {
     if (options.repo) {
       // Generate prompt for specific repo
-      const prompt = await generatePromptForRepo(cwd, options.thread, options.repo);
+      const prompt = await generatePromptForRepo(cwd, options.thread, options.repo, promptOptions);
 
       if (!prompt) {
         console.error(chalk.red(`Repo "${options.repo}" is not pending in this thread.`));
@@ -47,11 +50,14 @@ export async function promptsCommand(options: PromptsOptions): Promise<void> {
       if (options.output === "summary") {
         printSummary([prompt]);
       } else {
+        if (options.memory && prompt.memoryContext?.sops.length) {
+          console.log(chalk.green(`  ✓ Injected ${prompt.memoryContext.sops.length} SOP(s) from memory\n`));
+        }
         console.log(prompt.prompt);
       }
     } else {
       // Generate prompts for all pending repos
-      const prompts = await generatePrompts(cwd, options.thread);
+      const prompts = await generatePrompts(cwd, options.thread, promptOptions);
 
       if (options.output === "summary") {
         printSummary(prompts);
@@ -59,6 +65,9 @@ export async function promptsCommand(options: PromptsOptions): Promise<void> {
         for (const p of prompts) {
           console.log(chalk.cyan(`\n${"=".repeat(60)}`));
           console.log(chalk.cyan(`  PROMPT FOR: ${p.repo}`));
+          if (options.memory && p.memoryContext?.sops.length) {
+            console.log(chalk.green(`  ✓ ${p.memoryContext.sops.length} SOP(s) from memory`));
+          }
           console.log(chalk.cyan(`${"=".repeat(60)}\n`));
           console.log(p.prompt);
         }

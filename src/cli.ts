@@ -72,6 +72,7 @@ program
   .requiredOption("--thread <id>", "Thread ID")
   .option("--repo <repo>", "Generate prompt for specific repo only")
   .option("--output <format>", "Output format: full or summary", "full")
+  .option("--memory", "Include SOPs and facts from memory")
   .action(async (options) => {
     const { promptsCommand } = await import("./commands/prompts.js");
     await promptsCommand(options);
