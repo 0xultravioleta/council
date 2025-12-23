@@ -193,4 +193,26 @@ program
     await runCommand(options);
   });
 
+// mcp command
+const mcp = program
+  .command("mcp")
+  .description("MCP server for automation");
+
+mcp
+  .command("serve")
+  .description("Start the MCP server")
+  .option("--port <port>", "Port to listen on", "3456")
+  .action(async (options) => {
+    const { mcpServerCommand } = await import("./commands/mcp.js");
+    await mcpServerCommand({ port: parseInt(options.port, 10) });
+  });
+
+mcp
+  .command("tools")
+  .description("List available MCP tools")
+  .action(async () => {
+    const { listMcpToolsCommand } = await import("./commands/mcp.js");
+    listMcpToolsCommand();
+  });
+
 program.parse();
