@@ -299,7 +299,30 @@ council close \
 
 ### Scenario 3: Pre-Integration Synergy Analysis
 
-**Situation**: Planning to merge functionality from multiple repos. Need to understand overlaps first.
+#### Triggers - When to Use
+- [ ] Planning to merge or consolidate microservices
+- [ ] Evaluating code reuse opportunities across repos
+- [ ] Onboarding to a new multi-repo codebase
+- [ ] Auditing for duplicate functionality
+- [ ] Checking for dependency version conflicts
+
+#### How to Recognize This Scenario
+```bash
+# Signs you need synergy analysis:
+grep -r "validateUser" ../*/src | wc -l  # Same function in multiple repos?
+cat ../*/package.json | grep "express"   # Different versions?
+```
+
+#### What to Look For in Results
+
+| Finding | Action |
+|---------|--------|
+| Shared deps, different versions | Align versions |
+| Endpoint overlaps | Namespace or merge |
+| Same boundary types | Share connection config |
+| Common exports | Extract to shared lib |
+
+#### Step-by-Step Workflow
 
 ```bash
 # Step 1: Run comprehensive scan
@@ -340,7 +363,40 @@ council close \
 
 ### Scenario 4: Emergency Hotfix Coordination
 
-**Situation**: Production is down. Need fastest possible coordination.
+#### Triggers - When to Use
+- [ ] Production outage or severe degradation
+- [ ] Customer-impacting bug requiring immediate fix
+- [ ] Security incident requiring coordinated response
+- [ ] SLA breach imminent or occurring
+
+#### Severity Guide
+
+| Severity | Response Time | Thread Prefix |
+|----------|--------------|---------------|
+| SEV1 - Total outage | Immediate | `URGENT:` |
+| SEV2 - Major degradation | 15 min | `HIGH:` |
+| SEV3 - Partial impact | 1 hour | `MEDIUM:` |
+
+#### Emergency Readiness Checklist
+```bash
+# Ensure ready BEFORE emergencies
+council init                    # Workspace exists
+which tmux                      # Tmux available
+which claude                    # Claude Code ready
+cat .council/registry.yaml      # Repos configured
+```
+
+#### Incident Response Flow
+```
+1. ALERT    → Create urgent thread
+2. ASSEMBLE → Spawn all sessions (tmux)
+3. BROADCAST → Interrupt with details
+4. EVIDENCE → Add logs, metrics
+5. ITERATE  → Auto-run with interrupts
+6. RESOLVE  → Close with root cause
+```
+
+#### Step-by-Step Workflow
 
 ```bash
 # Step 1: Create urgent thread
@@ -385,7 +441,26 @@ council close \
 
 ### Scenario 5: Architecture Discussion
 
-**Situation**: Evaluating whether to extract a shared module.
+#### Triggers - When to Use
+- [ ] Considering extracting shared code into a library
+- [ ] Debating between architectural approaches
+- [ ] Planning major refactoring or migration
+- [ ] Designing new system boundaries
+
+#### How to Recognize This Scenario
+```bash
+# Signs you need architecture discussion:
+diff <(grep -r "validateToken" ../app-a/src) <(grep -r "validateToken" ../app-b/src)
+# If similar code exists in multiple repos → extraction candidate
+```
+
+#### Key Questions to Ask
+- What's the current state in each repo?
+- What are the constraints (performance, compatibility)?
+- What's the migration path?
+- Who owns the shared code?
+
+#### Step-by-Step Workflow
 
 ```bash
 # Step 1: Scan to understand current coupling
@@ -438,7 +513,35 @@ council close \
 
 ### Scenario 6: Manual vs Automated Workflows
 
-**Manual mode** - Full control, step by step:
+#### Triggers - When to Use Each Mode
+
+| Mode | Use When | Control |
+|------|----------|---------|
+| **Manual** | Learning, sensitive changes, full review needed | High |
+| **Semi-auto** | Regular work, want clipboard help | Medium |
+| **Full auto** | Routine tasks, time pressure | Low |
+
+#### Decision Flowchart
+```
+Sensitive/risky change? → YES → Manual mode
+                       → NO  ↓
+Need to review each response? → YES → Semi-auto
+                              → NO  ↓
+Time critical? → YES → Full auto
+             → NO  → Semi-auto
+```
+
+#### Switching Modes Mid-Thread
+```bash
+# Stop auto mode
+council sessions kill --name council-th_xxx
+
+# Continue manually
+council prompts --thread th_xxx --interactive
+council tick --thread th_xxx
+```
+
+#### Manual Mode - Full control, step by step:
 
 ```bash
 # Create thread
@@ -492,7 +595,35 @@ council interrupt --thread th_xxx --note "Redirect to focus on X"
 
 ### Scenario 7: Working with Evidence
 
-**Adding different types of evidence**:
+#### Triggers - When to Add Evidence
+- [ ] Bug reports with screenshots or logs
+- [ ] Error messages that need exact text
+- [ ] Configuration files relevant to issue
+- [ ] Performance profiles or metrics
+- [ ] Design mockups for features
+
+#### Evidence Types and Handling
+
+| Type | Extension | Flag | Notes |
+|------|-----------|------|-------|
+| Logs | .log, .txt | `--redact` | Auto-mask secrets |
+| Screenshots | .png, .jpg | (none) | Binary, copied as-is |
+| Config | .json, .yaml | `--redact` | Check for API keys |
+| Env files | .env | `--force` | Blocked by default |
+
+#### Pre-Evidence Checklist
+```bash
+# Check for secrets before adding
+grep -E "(password|secret|key|token).*=" ./file.txt
+
+# Check file size (large files slow things down)
+ls -lh ./file.txt
+
+# Trim logs to relevant section
+tail -100 ./app.log > ./relevant.log
+```
+
+#### Adding Different Types of Evidence:
 
 ```bash
 # Add a log file (auto-redacts secrets)
@@ -522,7 +653,39 @@ council ask \
 
 ### Scenario 8: Parallel Tmux Sessions
 
-**Fastest workflow for multi-repo work**:
+#### Triggers - When to Use Tmux Mode
+- [ ] Working on 3+ repos simultaneously
+- [ ] Need visual oversight of all agents
+- [ ] Prefer terminal-based workflow
+- [ ] Running on remote server via SSH
+
+#### Prerequisites
+```bash
+which tmux || sudo apt install tmux  # Install tmux
+which claude                          # Claude Code available
+```
+
+#### Layout Selection Guide
+
+| Layout | Best For | Repos |
+|--------|----------|-------|
+| `tiled` | 3-6 repos, equal importance | Default |
+| `horizontal` | 2 repos, code side-by-side | Review |
+| `vertical` | 2 repos, comparing outputs | Logs |
+
+#### Tmux Quick Reference
+```bash
+# Inside tmux session
+Ctrl+B, Arrow    # Move between panes
+Ctrl+B, z        # Zoom pane (toggle)
+Ctrl+B, d        # Detach from session
+
+# Outside tmux
+tmux ls                       # List sessions
+tmux attach -t council-th_xxx # Reattach
+```
+
+#### Fastest Workflow for Multi-Repo Work:
 
 ```bash
 # Step 1: Create thread
@@ -563,7 +726,33 @@ council spawn --thread th_xxx --tmux --layout tiled
 
 ### Scenario 9: Memory-Assisted Debugging
 
-**Using learned SOPs and facts**:
+#### Triggers - When to Use Memory
+- [ ] Debugging a recurring issue
+- [ ] Issue similar to past problems
+- [ ] Want to leverage organizational knowledge
+- [ ] Training new team members on past solutions
+
+#### How Memory Helps
+```
+Acontext (SOPs):
+- "When JWT auth fails, check algorithm mismatch first"
+- "Database timeouts usually indicate connection pool exhaustion"
+
+Cognee (Facts):
+- "Frontend signs JWT with HS256"
+- "Backend rate limit is 1000 req/min"
+```
+
+#### Prerequisites
+```bash
+# Memory must be configured in registry
+cat .council/registry.yaml | grep -A5 "memory:"
+
+# Previous threads must have been closed (to learn from)
+council thread list | grep resolved
+```
+
+#### Using Learned SOPs and Facts:
 
 ```bash
 # Step 1: Create thread with memory enabled
@@ -584,7 +773,40 @@ council prompts --thread th_xxx --memory
 
 ### Scenario 10: Long-Running Investigation
 
-**Multi-day or complex investigation**:
+#### Triggers - When to Use
+- [ ] Complex issue requiring deep analysis
+- [ ] Investigation spanning multiple days
+- [ ] Need to preserve context across sessions
+- [ ] Multiple people contributing over time
+
+#### Best Practices for Long Investigations
+```bash
+# 1. Use descriptive thread titles
+council thread new --title "Memory leak in worker - heap analysis" ...
+
+# 2. Add evidence incrementally
+council add-evidence --thread th_xxx --file ./day1-heap.json
+council add-evidence --thread th_xxx --file ./day2-heap.json
+
+# 3. Use interrupts to document findings
+council interrupt --thread th_xxx --note "Day 1: Identified leak in event handlers"
+
+# 4. Review transcript to catch up
+council live --thread th_xxx  # See full history
+```
+
+#### Thread State Persistence
+```bash
+# Threads persist indefinitely until closed
+council thread list
+# th_xxx | Memory leak investigation | active | turn 15 | 3 days ago
+
+# Resume anytime
+council prompts --thread th_xxx
+council tick --thread th_xxx
+```
+
+#### Multi-Day or Complex Investigation:
 
 ```bash
 # Day 1: Start investigation
