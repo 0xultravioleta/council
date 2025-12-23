@@ -105,7 +105,7 @@ Milestone goals:
 
 ---
 
-## Phase 5: Automation + UX (M5) ← CURRENT
+## Phase 5: Automation + UX (M5) ✓ COMPLETE
 
 Milestone goals:
 - Optional automation does not change the file protocol.
