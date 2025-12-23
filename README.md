@@ -123,11 +123,42 @@ council close \
 
 ## Scenarios
 
-Detailed step-by-step guides for common multi-repo workflows.
+Detailed step-by-step guides for common multi-repo workflows. Each scenario includes:
+- **Triggers**: When to use this scenario
+- **Prerequisites**: What you need before starting
+- **Step-by-step commands**: Complete workflow
+
+---
 
 ### Scenario 1: Cross-Repo Bug Investigation
 
-**Situation**: Users report 500 errors. You suspect the issue spans frontend and backend.
+#### Triggers - When to Use
+- [ ] Error reports mention behavior spanning multiple services
+- [ ] Logs show failures at service boundaries (API calls, message queues)
+- [ ] Bug reproduces in one repo but root cause is unclear
+- [ ] Stack traces point to external service responses
+- [ ] "It works locally" but fails in integration
+
+#### How to Recognize This Scenario
+```bash
+# Check if error involves cross-service communication
+grep -r "fetch\|axios\|http\." ./src           # Frontend calling backend?
+grep -r "ECONNREFUSED\|timeout\|502\|503" ./logs  # Connection issues?
+
+# Look for boundary errors in logs
+tail -100 /var/log/app/error.log | grep -i "api\|service\|endpoint"
+```
+
+#### Prerequisites
+```bash
+# Ensure repos are in registry
+cat .council/registry.yaml | grep -A2 "frontend\|backend"
+
+# Have error logs or screenshots ready
+ls -la ./evidence/
+```
+
+#### Step-by-Step Workflow
 
 ```bash
 # Step 1: Scan repos to understand integration points
@@ -179,7 +210,47 @@ council close \
 
 ### Scenario 2: Coordinated Feature Development
 
-**Situation**: Building a new "user preferences" feature that needs frontend UI, backend API, and shared types.
+#### Triggers - When to Use
+- [ ] New feature requires changes in 2+ repositories
+- [ ] Feature has dependencies (shared types → API → UI)
+- [ ] Multiple developers/agents need to stay synchronized
+- [ ] Feature spec references multiple system components
+- [ ] Changes need to be deployed together
+
+#### How to Recognize This Scenario
+```bash
+# Map out which repos need changes:
+# 1. Does it need new types? → shared repo
+# 2. Does it need new API? → backend repo
+# 3. Does it need new UI? → frontend repo
+# 4. Does it need new workers? → worker repo
+
+# Check existing shared types
+ls ../shared/src/types/
+
+# Check existing API endpoints
+grep -r "router\.\|app\." ../backend/src/routes/
+```
+
+#### Prerequisites
+```bash
+# Feature spec is clear
+cat ./specs/user-preferences.md
+
+# All repos in registry
+council scan --repos "frontend,backend,shared" --output summary
+
+# Design mockups ready (optional)
+ls ./designs/*.png
+```
+
+#### Pre-flight Checklist
+- [ ] Feature spec defines all components needed
+- [ ] Identified dependency order (what must be built first)
+- [ ] All relevant repos are in registry.yaml
+- [ ] Design mockups/specs available as evidence
+
+#### Step-by-Step Workflow
 
 ```bash
 # Step 1: Create thread with all involved repos
