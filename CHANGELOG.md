@@ -55,13 +55,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MCP server for automation (`council mcp serve`)
 - Synergy scanner with endpoint/boundary detection
 
+### Security
+- Redaction guard for evidence files
+  - Detects common secret patterns (AWS, GitHub, Stripe, OpenAI, Anthropic)
+  - Detects passwords in URLs and connection strings
+  - Detects private keys (RSA, DSA, EC, OpenSSH)
+  - Auto-redact with `--redact` flag
+  - Force mode with `--force` flag
+  - Warns on sensitive filenames (.env, credentials, etc.)
+
 ### Documentation
 - README with quickstart guide
 - Example registry configuration
 - Sample transcript demonstrating workflow
-
-## [Unreleased]
-
-### Planned
-- Redaction guard for secrets in evidence
-- Release checklist automation
+- CHANGELOG following Keep a Changelog format
