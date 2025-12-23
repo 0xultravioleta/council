@@ -119,6 +119,427 @@ council close \
   --summary "Fixed token refresh logic in backend"
 ```
 
+---
+
+## Scenarios
+
+Detailed step-by-step guides for common multi-repo workflows.
+
+### Scenario 1: Cross-Repo Bug Investigation
+
+**Situation**: Users report 500 errors. You suspect the issue spans frontend and backend.
+
+```bash
+# Step 1: Scan repos to understand integration points
+council scan --repos "frontend,backend" --save
+
+# Step 2: Create investigation thread
+council thread new \
+  --title "Investigate 500 errors on checkout" \
+  --repos "frontend,backend"
+# Output: Created thread th_20251222_abc
+
+# Step 3: Start the investigation from frontend's perspective
+council ask \
+  --thread th_20251222_abc \
+  --from frontend \
+  --to backend \
+  --summary "Users getting 500 errors on POST /api/checkout. Request payload looks valid. Is the endpoint receiving requests?"
+
+# Step 4: Add error logs as evidence
+council add-evidence \
+  --thread th_20251222_abc \
+  --file ./error-logs.txt \
+  --redact  # Auto-mask any secrets in logs
+
+# Step 5: Generate prompts and spawn Claude sessions
+council prompts --thread th_20251222_abc
+council spawn --thread th_20251222_abc --tmux --attach
+
+# Step 6: Watch the dialogue unfold
+# (In another terminal)
+council live --thread th_20251222_abc
+
+# Step 7: Inject context when you discover something
+council interrupt \
+  --thread th_20251222_abc \
+  --note "Found that the error started at 2pm - same time as database migration"
+
+# Step 8: Let agents continue investigating
+council tick --thread th_20251222_abc
+
+# Step 9: Close when resolved
+council close \
+  --thread th_20251222_abc \
+  --status resolved \
+  --summary "Database migration added NOT NULL constraint. Backend updated to handle nullable field."
+```
+
+---
+
+### Scenario 2: Coordinated Feature Development
+
+**Situation**: Building a new "user preferences" feature that needs frontend UI, backend API, and shared types.
+
+```bash
+# Step 1: Create thread with all involved repos
+council thread new \
+  --title "Implement user preferences feature" \
+  --repos "frontend,backend,shared"
+
+# Step 2: Start with shared types (dependency order)
+council ask \
+  --thread th_20251222_xyz \
+  --from backend \
+  --to shared \
+  --summary "Need to define UserPreferences type with theme, notifications, and locale settings"
+
+# Step 3: After shared is done, coordinate backend
+council ask \
+  --thread th_20251222_xyz \
+  --from frontend \
+  --to backend \
+  --summary "What endpoints will be available for preferences? Need GET and PATCH."
+
+# Step 4: Use auto-run mode for faster iteration
+council run --thread th_20251222_xyz --spawn
+
+# Step 5: Monitor progress
+council live --thread th_20251222_xyz
+
+# Step 6: Add design mockup as evidence
+council add-evidence \
+  --thread th_20251222_xyz \
+  --file ./preferences-mockup.png
+
+# Step 7: Redirect if needed
+council interrupt \
+  --thread th_20251222_xyz \
+  --note "Product changed requirements: also need language preference, not just locale"
+
+# Step 8: Close with summary
+council close \
+  --thread th_20251222_xyz \
+  --status resolved \
+  --summary "UserPreferences implemented: shared types, REST API, React settings page"
+```
+
+---
+
+### Scenario 3: Pre-Integration Synergy Analysis
+
+**Situation**: Planning to merge functionality from multiple repos. Need to understand overlaps first.
+
+```bash
+# Step 1: Run comprehensive scan
+council scan \
+  --repos "service-a,service-b,service-c" \
+  --output full \
+  --save
+
+# Step 2: Review the output
+# - Shared Dependencies: Shows common packages (version conflicts?)
+# - Endpoint Overlaps: Shows conflicting routes
+# - Potential Integrations: Shows where repos touch same boundaries
+
+# Step 3: Create planning thread based on findings
+council thread new \
+  --title "Plan service consolidation" \
+  --repos "service-a,service-b"
+
+# Step 4: Ask about specific overlap found in scan
+council ask \
+  --thread th_20251222_plan \
+  --from service-a \
+  --to service-b \
+  --summary "Scan shows we both have /api/users endpoint. What does yours do? Should we merge or namespace?"
+
+# Step 5: Gather decisions
+council tick --thread th_20251222_plan
+council tick --thread th_20251222_plan
+
+# Step 6: Close with integration plan
+council close \
+  --thread th_20251222_plan \
+  --status resolved \
+  --summary "Decision: Namespace endpoints as /api/v1/users (service-a) and /api/v2/users (service-b) until Q2 merge"
+```
+
+---
+
+### Scenario 4: Emergency Hotfix Coordination
+
+**Situation**: Production is down. Need fastest possible coordination.
+
+```bash
+# Step 1: Create urgent thread
+council thread new \
+  --title "URGENT: Production checkout broken" \
+  --repos "frontend,backend,payments"
+
+# Step 2: Immediately spawn all sessions in tmux
+council spawn \
+  --thread th_20251222_urgent \
+  --tmux \
+  --layout tiled \
+  --attach
+
+# Step 3: Broadcast the issue to all repos
+council interrupt \
+  --thread th_20251222_urgent \
+  --note "PRODUCTION DOWN: Checkout returns 503. Started 5 min ago. All hands investigating."
+
+# Step 4: Add production logs
+council add-evidence \
+  --thread th_20251222_urgent \
+  --file /var/log/app/error.log \
+  --redact
+
+# Step 5: Run auto-tick for rapid iteration
+council run --thread th_20251222_urgent
+
+# Step 6: Inject findings as you discover them
+council interrupt \
+  --thread th_20251222_urgent \
+  --note "Payments service shows connection timeout to Stripe API"
+
+# Step 7: Close with postmortem notes
+council close \
+  --thread th_20251222_urgent \
+  --status resolved \
+  --summary "Root cause: Stripe API key expired. Rotated key and added expiry monitoring."
+```
+
+---
+
+### Scenario 5: Architecture Discussion
+
+**Situation**: Evaluating whether to extract a shared module.
+
+```bash
+# Step 1: Scan to understand current coupling
+council scan --repos "app-a,app-b,app-c" --output json --save
+
+# Step 2: Create discussion thread
+council thread new \
+  --title "Evaluate extracting auth module" \
+  --repos "app-a,app-b,app-c"
+
+# Step 3: Start with hypothesis
+council ask \
+  --thread th_20251222_arch \
+  --from app-a \
+  --to app-b \
+  --summary "We both implement JWT validation. Should we extract to shared auth library? What's your current implementation?"
+
+# Step 4: Expand discussion
+council ask \
+  --thread th_20251222_arch \
+  --from app-a \
+  --to app-c \
+  --summary "Same question about auth extraction. Also, do you handle refresh tokens?"
+
+# Step 5: Let discussion develop
+council tick --thread th_20251222_arch
+council tick --thread th_20251222_arch
+council tick --thread th_20251222_arch
+
+# Step 6: Inject human decision criteria
+council interrupt \
+  --thread th_20251222_arch \
+  --note "Key factors: 1) Must support both session and JWT, 2) Need <10ms validation time, 3) Can't break existing APIs"
+
+# Step 7: Request resolution
+council ask \
+  --thread th_20251222_arch \
+  --from HUMAN \
+  --to ALL \
+  --summary "Based on discussion, propose final recommendation: extract or keep separate?"
+
+# Step 8: Close with decision
+council close \
+  --thread th_20251222_arch \
+  --status resolved \
+  --summary "Decision: Extract auth to @company/auth package. Start with JWT validation, add session support in v2."
+```
+
+---
+
+### Scenario 6: Manual vs Automated Workflows
+
+**Manual mode** - Full control, step by step:
+
+```bash
+# Create thread
+council thread new --title "Manual debug" --repos "a,b"
+
+# Send message
+council ask --thread th_xxx --from a --to b --summary "Question..."
+
+# Generate prompts (copy manually to Claude Code)
+council prompts --thread th_xxx --interactive
+
+# After Claude responds, advance
+council tick --thread th_xxx
+
+# Repeat until done
+council close --thread th_xxx --status resolved
+```
+
+**Semi-automated** - Prompts copied automatically:
+
+```bash
+# Create and ask
+council thread new --title "Semi-auto" --repos "a,b"
+council ask --thread th_xxx --from a --to b --summary "Question..."
+
+# Copy prompts to clipboard
+council prompts --thread th_xxx --copy
+
+# Paste into Claude Code, get response, tick
+council tick --thread th_xxx
+```
+
+**Fully automated** - Claude Code sessions spawned:
+
+```bash
+# Create and spawn
+council thread new --title "Full auto" --repos "a,b"
+council ask --thread th_xxx --from a --to b --summary "Question..."
+
+# Spawn sessions and auto-run
+council run --thread th_xxx --spawn
+
+# Just monitor
+council live --thread th_xxx
+
+# Interrupt only if needed
+council interrupt --thread th_xxx --note "Redirect to focus on X"
+```
+
+---
+
+### Scenario 7: Working with Evidence
+
+**Adding different types of evidence**:
+
+```bash
+# Add a log file (auto-redacts secrets)
+council add-evidence --thread th_xxx --file ./app.log --redact
+
+# Add a screenshot
+council add-evidence --thread th_xxx --file ./error-screenshot.png
+
+# Add config (requires --force if sensitive filename detected)
+council add-evidence --thread th_xxx --file ./.env.example --force
+
+# Add with full redaction
+council add-evidence --thread th_xxx --file ./config.json --redact
+```
+
+**Referencing evidence in messages**:
+
+```bash
+council ask \
+  --thread th_xxx \
+  --from frontend \
+  --to backend \
+  --summary "See attached error log (20251222T120000_app.log). Error on line 423."
+```
+
+---
+
+### Scenario 8: Parallel Tmux Sessions
+
+**Fastest workflow for multi-repo work**:
+
+```bash
+# Step 1: Create thread
+council thread new --title "Parallel work" --repos "api,web,mobile,shared"
+
+# Step 2: Spawn all in tiled layout
+council spawn --thread th_xxx --tmux --layout tiled --attach
+
+# You now have 4 panes, each with Claude Code in the correct directory
+# Each pane shows the prompt for that repo
+
+# Step 3: In a separate terminal, monitor
+council live --thread th_xxx
+
+# Step 4: Manage sessions
+council sessions list
+# Output:
+# council-th_xxx (4 panes: api, web, mobile, shared)
+
+# Step 5: Kill when done
+council sessions kill --name council-th_xxx
+```
+
+**Layout options**:
+
+```bash
+# Horizontal split (stacked)
+council spawn --thread th_xxx --tmux --layout horizontal
+
+# Vertical split (side by side)
+council spawn --thread th_xxx --tmux --layout vertical
+
+# Tiled (grid) - best for 3+ repos
+council spawn --thread th_xxx --tmux --layout tiled
+```
+
+---
+
+### Scenario 9: Memory-Assisted Debugging
+
+**Using learned SOPs and facts**:
+
+```bash
+# Step 1: Create thread with memory enabled
+council thread new --title "Auth bug (check memory)" --repos "frontend,backend"
+
+# Step 2: Generate prompts with memory context
+council prompts --thread th_xxx --memory
+
+# This injects:
+# - SOPs from Acontext (past procedures that worked)
+# - Facts from Cognee (known system behaviors)
+
+# Step 3: The prompt now includes relevant history
+# "Previous resolution: JWT library v9 requires explicit algorithm..."
+```
+
+---
+
+### Scenario 10: Long-Running Investigation
+
+**Multi-day or complex investigation**:
+
+```bash
+# Day 1: Start investigation
+council thread new --title "Memory leak investigation" --repos "api,worker"
+council ask --thread th_xxx --from api --to worker \
+  --summary "Heap grows unbounded after 24h. Suspecting event listener leak."
+
+# Add profiler output
+council add-evidence --thread th_xxx --file ./heap-snapshot.json
+
+# End of day - thread persists
+council thread list
+# Shows: th_xxx (active, turn 5)
+
+# Day 2: Continue
+council live --thread th_xxx  # See where we left off
+council ask --thread th_xxx --from worker --to api \
+  --summary "Found orphaned subscriptions. Are you cleaning up on disconnect?"
+
+# Day 3: Resolution
+council close --thread th_xxx --status resolved \
+  --summary "Event listeners not removed on WebSocket close. Added cleanup handler."
+```
+
+---
+
 ## Commands
 
 ### Thread Management
