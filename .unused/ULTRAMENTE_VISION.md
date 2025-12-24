@@ -1,4 +1,4 @@
-# OmniMemory: Unified Multi-Memory Intelligence Layer
+# Ultramente: Unified Multi-Memory Intelligence Layer
 
 > "La memoria no es un archivo, es un campo gravitacional que atrae conexiones."
 
@@ -10,7 +10,7 @@ Cada proyecto que tocas genera memoria. Cognee captura hechos semánticos. Acont
 
 ```
                          ┌─────────────────────────────┐
-                         │      OMNIMEMORY CORE        │
+                         │      ULTRAMENTE CORE        │
                          │   "El que ve todo y piensa" │
                          └─────────────┬───────────────┘
                                        │
@@ -140,7 +140,7 @@ class GeminiSynthesizer {
 ### Layer 1: Memory Adapters
 
 ```
-omnimemory/
+ultramente/
   adapters/
     cognee/           # Wrapper around Cognee API
     acontext/         # Wrapper around Acontext API
@@ -152,7 +152,7 @@ omnimemory/
 ### Layer 2: Federation
 
 ```
-omnimemory/
+ultramente/
   federation/
     router.ts         # Routes queries to appropriate backends
     merger.ts         # Merges results from multiple backends
@@ -163,7 +163,7 @@ omnimemory/
 ### Layer 3: Membrane (Meta-Intelligence)
 
 ```
-omnimemory/
+ultramente/
   membrane/
     observer.ts       # Watches all memory operations
     pattern-detector.ts   # Finds cross-memory patterns
@@ -174,9 +174,9 @@ omnimemory/
 ### Layer 4: Interfaces
 
 ```
-omnimemory/
+ultramente/
   interfaces/
-    cli/              # `omni query "what do I know about X?"`
+    cli/              # `mente query "what do I know about X?"`
     mcp/              # MCP server for Claude/other agents
     rest/             # REST API for any client
     stream/           # Real-time memory updates via SSE
@@ -270,7 +270,7 @@ Ningún sistema individual haría esa conexión. La membrana sí.
 - [ ] Implementar `MemoryRouter`
 - [ ] Implementar `ResultMerger`
 - [ ] Query DSL para multi-backend queries
-- [ ] CLI básico: `omni query "..."`
+- [ ] CLI básico: `mente query "..."`
 
 ### Phase 2: Gemini Integration
 - [ ] `GeminiSynthesizer` para conexiones creativas
@@ -332,7 +332,7 @@ En vez de solo responder, el sistema genera preguntas:
 ## Package Structure
 
 ```
-@ultravioleta/omnimemory
+@ultravioleta/ultramente
   ├── core/           # Interfaces, types, utils
   ├── adapters/       # Backend implementations
   ├── federation/     # Multi-backend orchestration
@@ -341,9 +341,9 @@ En vez de solo responder, el sistema genera preguntas:
   └── cli/            # Command line interface
 
 # Usage in any project:
-import { OmniMemory } from '@ultravioleta/omnimemory';
+import { Ultramente } from '@ultravioleta/ultramente';
 
-const omni = new OmniMemory({
+const omni = new Ultramente({
   backends: ['cognee', 'acontext', 'gemini'],
   project: 'my-project',
   reflection: { enabled: true, interval: '1h' }
@@ -378,7 +378,7 @@ Eso es lo que queremos construir.
 
 *Escrito en un paréntesis inevitable. Para retomar cuando el momento llegue.*
 
-`ultravioleta/dao/omnimemory` - El nombre se siente correcto.
+`ultravioleta/dao/ultramente` - El nombre se siente correcto.
 
 ---
 
@@ -438,7 +438,7 @@ pgvector + Supabase no es "otro backend más". Es potencialmente **EL SUBSTRATO*
 
 ### Why Supabase Specifically?
 
-| Feature | Benefit for OmniMemory |
+| Feature | Benefit for Ultramente |
 |---------|------------------------|
 | **pgvector** | Native vector similarity in SQL |
 | **Realtime** | Live sync across projects/agents |
@@ -664,7 +664,7 @@ serve(async (req) => {
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                         OMNIMEMORY                                      │
+│                         ULTRAMENTE                                      │
 │                                                                         │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
 │  │                    INTERPRETATION LAYER                          │   │
@@ -780,7 +780,7 @@ Production:
   Supabase (managed) ─── pgvector, realtime, auth, edge
 
 Interpretation:
-  @ultravioleta/omnimemory ─── TypeScript package
+  @ultravioleta/ultramente ─── TypeScript package
     ├── adapters/supabase.ts   # The substrate
     ├── interpreters/cognee.ts # Semantic interpretation
     ├── interpreters/acontext.ts # Procedural interpretation
@@ -1352,7 +1352,7 @@ That's not AGI. But it's a hell of a memory system.
 ## Updated Stack
 
 ```
-@ultravioleta/omnimemory
+@ultravioleta/ultramente
   ├── core/
   │   └── types.ts
   ├── substrate/
@@ -1928,7 +1928,7 @@ const CONSENSUS_COST = {
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│                             OMNIMEMORY v2                                     │
+│                             ULTRAMENTE v2                                     │
 │                         "Consensus of 4 Titans"                               │
 │                                                                               │
 │  ┌────────────────────────────────────────────────────────────────────────┐  │
@@ -2420,7 +2420,7 @@ const HYBRID_COST = {
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                    OMNIMEMORY v3 - HYBRID CONSENSUS                     │
+│                    ULTRAMENTE v3 - HYBRID CONSENSUS                     │
 │                        "The Council of 4 Titans"                        │
 │                                                                         │
 │  ┌───────────────────────────────────────────────────────────────────┐  │
