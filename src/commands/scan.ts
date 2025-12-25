@@ -9,6 +9,7 @@ export interface ScanOptions {
   repos: string;
   output?: "summary" | "full" | "json";
   save?: boolean;
+  focus?: string;
 }
 
 export async function scanCommand(options: ScanOptions): Promise<void> {
@@ -67,13 +68,22 @@ export async function scanCommand(options: ScanOptions): Promise<void> {
     return;
   }
 
+  // Parse focus areas
+  const focusAreas = options.focus
+    ? options.focus.split(",").map((f) => f.trim().toLowerCase())
+    : ["endpoints", "boundaries", "config", "dependencies"];
+
   // Print detailed results
   console.log(chalk.bold("\n📊 Scan Results\n"));
+
+  if (options.focus) {
+    console.log(chalk.gray(`Focus: ${focusAreas.join(", ")}\n`));
+  }
 
   for (const result of results) {
     console.log(chalk.cyan(`\n═══ ${result.repo} ═══`));
 
-    if (result.endpoints.length > 0) {
+    if (focusAreas.includes("endpoints") && result.endpoints.length > 0) {
       console.log(chalk.white("\n  Endpoints:"));
       for (const ep of result.endpoints.slice(0, 10)) {
         console.log(chalk.gray(`    ${ep.method.padEnd(6)} ${ep.path}`));
@@ -84,7 +94,7 @@ export async function scanCommand(options: ScanOptions): Promise<void> {
       }
     }
 
-    if (result.boundaries.length > 0 && options.output !== "summary") {
+    if (focusAreas.includes("boundaries") && result.boundaries.length > 0 && options.output !== "summary") {
       console.log(chalk.white("\n  Boundaries:"));
       const boundaryGroups = new Map<string, typeof result.boundaries>();
       for (const b of result.boundaries) {
@@ -97,10 +107,32 @@ export async function scanCommand(options: ScanOptions): Promise<void> {
       }
     }
 
-    if (result.configFiles.length > 0) {
+    if (focusAreas.includes("config") && result.configFiles.length > 0) {
       console.log(chalk.white("\n  Config Files:"));
       for (const cf of result.configFiles) {
         console.log(chalk.gray(`    ${cf.name}`));
+      }
+    }
+
+    if (focusAreas.includes("dependencies") && result.dependencies.length > 0) {
+      console.log(chalk.white("\n  Dependencies:"));
+      const deps = result.dependencies.slice(0, 15);
+      for (const dep of deps) {
+        console.log(chalk.gray(`    ${dep.name}${dep.version ? ` (${dep.version})` : ""}`));
+      }
+      if (result.dependencies.length > 15) {
+        console.log(chalk.gray(`    ... and ${result.dependencies.length - 15} more`));
+      }
+    }
+
+    if (focusAreas.includes("exports") && result.exports.length > 0) {
+      console.log(chalk.white("\n  Exports:"));
+      const exports = result.exports.slice(0, 10);
+      for (const exp of exports) {
+        console.log(chalk.gray(`    ${exp.name} (${exp.type}) - ${exp.file}`));
+      }
+      if (result.exports.length > 10) {
+        console.log(chalk.gray(`    ... and ${result.exports.length - 10} more`));
       }
     }
   }
