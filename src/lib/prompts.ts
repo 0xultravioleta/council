@@ -167,6 +167,10 @@ function formatInboxMessages(messages: Message[]): string {
 export interface GeneratePromptsOptions {
   /** Include memory context (SOPs, facts) */
   includeMemory?: boolean;
+  /** Optimize prompts for efficiency (shorter, more focused) */
+  optimize?: boolean;
+  /** Add a hint/focus area to guide the investigation */
+  hint?: string;
 }
 
 // Generate prompts for all pending repos
@@ -234,12 +238,27 @@ export async function generatePrompts(
       }
     }
 
+    // Build hint section if provided
+    let hintSection = "";
+    if (options?.hint) {
+      hintSection = `\n## Focus Area\n\n**Hint from orchestrator:** ${options.hint}\n\nPrioritize investigating aspects related to this hint.\n`;
+    }
+
+    // Build task section based on optimization level
+    let taskSection = "";
+    if (options?.optimize) {
+      taskSection = `\n## Task\n\nInvestigate based on inbox messages. Respond concisely with key findings only.\n`;
+    } else {
+      taskSection = `\n## Your Task\n\nReview the messages above and investigate in your codebase. When ready, respond with a message to the appropriate repo.\n`;
+    }
+
     const fullPrompt =
       systemPrompt +
       memorySection +
+      hintSection +
       "\n## Inbox Messages\n\n" +
       formatInboxMessages(repoMessages) +
-      "\n## Your Task\n\nReview the messages above and investigate in your codebase. When ready, respond with a message to the appropriate repo.\n";
+      taskSection;
 
     prompts.push({
       repo,

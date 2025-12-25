@@ -16,6 +16,8 @@ export interface PromptsOptions {
   memory?: boolean;
   copy?: boolean;
   interactive?: boolean;
+  optimize?: boolean;
+  hint?: string;
 }
 
 export async function promptsCommand(options: PromptsOptions): Promise<void> {
@@ -42,7 +44,19 @@ export async function promptsCommand(options: PromptsOptions): Promise<void> {
     return;
   }
 
-  const promptOptions = { includeMemory: options.memory };
+  const promptOptions = {
+    includeMemory: options.memory,
+    optimize: options.optimize,
+    hint: options.hint,
+  };
+
+  // Show optimization/hint info
+  if (options.optimize) {
+    console.log(chalk.cyan("🎯 Optimization mode enabled - prompts will be streamlined for efficiency\n"));
+  }
+  if (options.hint) {
+    console.log(chalk.cyan(`💡 Hint: "${options.hint}"\n`));
+  }
 
   try {
     if (options.repo) {
